@@ -89,8 +89,7 @@ class SVFDModeSolver(ModeSolver):
     def _get_eps(self, xc, yc):
         eps = self.epsfunc(xc, yc)
         eps = numpy.c_[eps[:, 0:1], eps, eps[:, -1:]]
-        eps = numpy.r_[eps[0:1, :], eps, eps[-1:, :]]
-        return eps
+        return numpy.r_[eps[0:1, :], eps, eps[-1:, :]]
 
     def build_matrix(self):
 
@@ -260,9 +259,7 @@ class SVFDModeSolver(ModeSolver):
         J = numpy.r_[iall, i_e, i_w, i_n, i_s]
         V = numpy.r_[Ap[iall], Ae[i_w], Aw[i_e], An[i_s], As[i_n]]
 
-        A = coo_matrix((V, (I, J))).tocsr()
-
-        return A
+        return coo_matrix((V, (I, J))).tocsr()
 
     def solve(self, neigs, tol):
 
@@ -286,24 +283,21 @@ class SVFDModeSolver(ModeSolver):
         # sort and save the modes
         idx = numpy.flipud(numpy.argsort(neff))
         self.neff = neff[idx]
-        tmp = []
-        for i in idx:
-            tmp.append(phi[i])
-
-        if self.method == "scalar":
-            self.phi = tmp
-        elif self.method == "Ex":
+        tmp = [phi[i] for i in idx]
+        if self.method == "Ex":
             self.Ex = tmp
-        if self.method == "Ey":
+        elif self.method == "Ey":
             self.Ey = tmp
 
+        elif self.method == "scalar":
+            self.phi = tmp
         return self
 
     def __str__(self):
-        descr = (
-            "Semi-Vectorial Finite Difference Modesolver\n\tmethod: %s\n" % self.method
+        return (
+            "Semi-Vectorial Finite Difference Modesolver\n\tmethod: %s\n"
+            % self.method
         )
-        return descr
 
 
 class VFDModeSolver(ModeSolver):

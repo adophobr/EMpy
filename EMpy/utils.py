@@ -47,7 +47,6 @@ class Layer(object):
             rix = self.mat.n(wl)
             EPS[hmax] = rix ** 2
             EPS1[hmax] = rix ** -2
-            return EPS, EPS1
         else:
             # anisotropic
             EPS = numpy.zeros((3, 3, 2 * hmax + 1), dtype=complex)
@@ -56,7 +55,8 @@ class Layer(object):
                 numpy.squeeze(self.mat.epsilonTensor(wl)) / EMpy.constants.eps0
             )
             EPS1[:, :, hmax] = scipy.linalg.inv(EPS[:, :, hmax])
-            return EPS, EPS1
+
+        return EPS, EPS1
 
     def capacitance(self, area=1.0, wl=0):
         """Capacitance = eps0 * eps_r * area / thickness."""
@@ -105,7 +105,6 @@ class BinaryGrating(object):
             EPS1 = (rix1 ** -2 - rix2 ** -2) * f * numpy.sinc(h * f) + rix2 ** -2 * (
                 h == 0
             )
-            return EPS, EPS1
         else:
             # anisotropic
             EPS = numpy.zeros((3, 3, 2 * hmax + 1), dtype=complex)
@@ -121,7 +120,8 @@ class BinaryGrating(object):
                 EPS1[:, :, ih] = (
                     scipy.linalg.inv(eps1) - scipy.linalg.inv(eps2)
                 ) * f * numpy.sinc(hh * f) + scipy.linalg.inv(eps2) * (hh == 0)
-            return EPS, EPS1
+
+        return EPS, EPS1
 
     def capacitance(self, area=1.0, wl=0):
         """Capacitance = eps0 * eps_r * area / thickness."""
@@ -211,7 +211,6 @@ class SymmetricDoubleGrating(object):
                 * numpy.sinc(h * f2)
                 * numpy.exp(2j * numpy.pi * h / N * B)
             )
-            return EPS, EPS1
         else:
             # anisotropic
             EPS = numpy.zeros((3, 3, 2 * hmax + 1), dtype=complex)
@@ -248,7 +247,8 @@ class SymmetricDoubleGrating(object):
                     * numpy.exp(2j * numpy.pi * hh / N * B)
                     + scipy.linalg.inv(eps3) * (hh == 0)
                 )
-            return EPS, EPS1
+
+        return EPS, EPS1
 
     def capacitance(self, area=1.0, wl=0):
         """Capacitance = eps0 * eps_r * area / thickness."""
@@ -335,7 +335,6 @@ class AsymmetricDoubleGrating(SymmetricDoubleGrating):
                 * numpy.sinc(h * f2)
                 * numpy.exp(2j * numpy.pi * h / N * B)
             )
-            return EPS, EPS1
         else:
             # anisotropic
             EPS = numpy.zeros((3, 3, 2 * hmax + 1), dtype=complex)
@@ -373,7 +372,8 @@ class AsymmetricDoubleGrating(SymmetricDoubleGrating):
                     * numpy.exp(2j * numpy.pi * hh / N * B)
                     + scipy.linalg.inv(eps3) * (hh == 0)
                 )
-            return EPS, EPS1
+
+        return EPS, EPS1
 
     def capacitance(self, area=1.0, wl=0):
         """Capacitance = eps0 * eps_r * area / thickness."""
@@ -819,10 +819,7 @@ class Slice(Multilayer):
 
     def find_layer(self, y):
         l = numpy.where(self.ys() <= y)[0]
-        if len(l) > 0:
-            return self[min(l[-1], len(self) - 1)]
-        else:
-            return self[0]
+        return self[min(l[-1], len(self) - 1)] if len(l) > 0 else self[0]
 
     def plot(self, x0, x1, nmin, nmax, wl=1.55e-6):
         try:
@@ -848,7 +845,7 @@ class Slice(Multilayer):
 
 class CrossSection(list):
     def __str__(self):
-        return "\n".join("%s" % s for s in self)
+        return "\n".join(f"{s}" for s in self)
 
     def widths(self):
         return numpy.array([s.width for s in self])
@@ -907,10 +904,7 @@ class CrossSection(list):
 
     def find_slice(self, x):
         s = numpy.where(self.xs() <= x)[0]
-        if len(s) > 0:
-            return self[min(s[-1], len(self) - 1)]
-        else:
-            return self[0]
+        return self[min(s[-1], len(self) - 1)] if len(s) > 0 else self[0]
 
     def _epsfunc(self, x, y, wl):
         if numpy.isscalar(x) and numpy.isscalar(y):
@@ -1084,7 +1078,14 @@ def group_delay_and_dispersion(wls, y):
     tau = -0.5 / numpy.pi * numpy.diff(phi) / df * 1e12
 
     # dispersion in ps/nm
-    Dpsnm = -0.5 / numpy.pi / cnmps * f[1:-1] ** 2 * numpy.diff(phi, 2) / df[0:-1] ** 2
+    Dpsnm = (
+        -0.5
+        / numpy.pi
+        / cnmps
+        * f[1:-1] ** 2
+        * numpy.diff(phi, 2)
+        / df[:-1] ** 2
+    )
 
     return phi, tau, Dpsnm
 
@@ -1179,15 +1180,8 @@ def find_peaks(x, y, threshold=1e-6):
             roots = scipy.interpolate.sproot(tckFWHM)
 
             idxFWHM = numpy.searchsorted(roots, xopt)
-            if idxFWHM <= 0:
-                xFWHM_1 = x[0]
-            else:
-                xFWHM_1 = roots[idxFWHM - 1]
-            if idxFWHM >= len(roots):
-                xFWHM_2 = x[-1]
-            else:
-                xFWHM_2 = roots[idxFWHM]
-
+            xFWHM_1 = x[0] if idxFWHM <= 0 else roots[idxFWHM - 1]
+            xFWHM_2 = x[-1] if idxFWHM >= len(roots) else roots[idxFWHM]
             p = Peak(xopt, yopt, idx, x[idx], y[idx], xFWHM_1, xFWHM_2)
             peaks.append(p)
 
@@ -1195,9 +1189,7 @@ def find_peaks(x, y, threshold=1e-6):
         # to sort in descending order
         if x_.y == y_.y:
             return 0
-        if x_.y > y_.y:
-            return -1
-        return 1
+        return -1 if x_.y > y_.y else 1
 
     peaks.sort(cmp=cmp_y)
 
@@ -1259,7 +1251,7 @@ def warning(s):
     :type s: str
     :rtype : str
     """
-    print("WARNING --- {}".format(s))
+    print(f"WARNING --- {s}")
 
 
 class ProgressBar(object):
@@ -1289,10 +1281,8 @@ class ProgressBar(object):
         """Update the progress bar with the new amount (with min and max
         values set at initialization; if it is over or under, it takes the
         min or max value as a default."""
-        if newAmount < self.min:
-            newAmount = self.min
-        if newAmount > self.max:
-            newAmount = self.max
+        newAmount = max(newAmount, self.min)
+        newAmount = min(newAmount, self.max)
         self.amount = newAmount
 
         # Figure out the new percent done, round to an integer
@@ -1308,25 +1298,22 @@ class ProgressBar(object):
         # Build a progress bar with an arrow of equal signs; special cases for
         # empty and full
         if numHashes == 0:
-            self.progBar = "[>%s]" % (" " * (allFull - 1))
+            self.progBar = f'[>{" " * (allFull - 1)}]'
         elif numHashes == allFull:
-            self.progBar = "[%s]" % ("=" * allFull)
+            self.progBar = f'[{"=" * allFull}]'
         else:
-            self.progBar = "[%s>%s]" % (
-                "=" * (numHashes - 1),
-                " " * (allFull - numHashes),
-            )
+            self.progBar = f'[{"=" * (numHashes - 1)}>{" " * (allFull - numHashes)}]'
 
         # figure out where to put the percentage, roughly centered
         percentPlace = (len(self.progBar) / 2) - len(str(percentDone))
-        percentString = " " + str(percentDone) + "% "
+        percentString = f" {percentDone}% "
 
         elapsed_time = time.time() - self.start_time
 
         # slice the percentage into the bar
         self.progBar = "".join(
             [
-                self.progBar[0:percentPlace],
+                self.progBar[:percentPlace],
                 percentString,
                 self.progBar[percentPlace + len(percentString) :],
             ]

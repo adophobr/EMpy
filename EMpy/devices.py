@@ -985,17 +985,16 @@ class NRR(Device):
 
         if wl is None:
             wl = self.wl
-        Hs = []
-        for K, neff, l1, l2 in zip(self.Ks, self.neffs, self.l1s, self.l2s):
-            Hs.append(
-                composeTMlist(
-                    [
-                        Line(self.wl, neff, 0.0, neff, l1).TM(wl),
-                        K.TM(wl),
-                        Line(self.wl, neff, 0.0, neff, l2).TM(wl),
-                    ]
-                )
+        Hs = [
+            composeTMlist(
+                [
+                    Line(self.wl, neff, 0.0, neff, l1).TM(wl),
+                    K.TM(wl),
+                    Line(self.wl, neff, 0.0, neff, l2).TM(wl),
+                ]
             )
+            for K, neff, l1, l2 in zip(self.Ks, self.neffs, self.l1s, self.l2s)
+        ]
         return composeCM(composeTMlist(Hs), self.Ks[-1].CM(wl))
 
 
@@ -1330,8 +1329,6 @@ class SWG(Device):
             pf = SWG.pf400_25
         elif (self.w, self.T) == (400, 125):
             pf = SWG.pf400_125
-        elif (self.w, self.T) == (400, 225):
-            pf = SWG.pf400_225
         elif self.w < 400 or self.w > 488 or self.T < 25 or self.T > 225:
             raise ValueError("input out of bounds")
         else:

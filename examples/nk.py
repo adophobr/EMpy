@@ -592,10 +592,7 @@ def AlAs_interp(wl, k=False):
 
     ns = np.interp(wl, wls, ns)
     ks = np.interp(wl, wls, ks)
-    if k:
-        return ns - 1j * ks
-    else:
-        return ns
+    return ns - 1j * ks if k else ns
 
 
 # end def(AlAs_interp)
@@ -861,10 +858,7 @@ def GaAs_interp(wl, k=False):
 
     ns = np.interp(wl, wls, ns)
     ks = np.interp(wl, wls, ks)
-    if k:
-        return ns - 1j * ks
-    else:
-        return ns
+    return ns - 1j * ks if k else ns
 
 
 # end def(GaAs_interp)
@@ -1052,10 +1046,7 @@ def GaSb_interp(wl, k=False):
 
     ns = np.interp(wl, wls, ns)
     ks = np.interp(wl, wls, ks)
-    if k:
-        return ns - 1j * ks
-    else:
-        return ns
+    return ns - 1j * ks if k else ns
 
 
 # end def(GaSb_interp)
@@ -1207,12 +1198,11 @@ def AlGaAs_interp(x, wl, k=False):
         Exception ValueError for wavelength out of model range
     """
     check_wl(wl, 0.206, 2.066, "AlGaAs_interp", fail=True)
-    if k:
-        GaAs = GaAs_interp(wl, k=True)
-        AlAs = AlAs_interp(wl, k=True)
-        return GaAs - (GaAs - AlAs) * x
-    else:
+    if not k:
         return GaAs_interp(wl) - (GaAs_interp(wl) - AlAs_interp(wl)) * x
+    GaAs = GaAs_interp(wl, k=True)
+    AlAs = AlAs_interp(wl, k=True)
+    return GaAs - (GaAs - AlAs) * x
 
 
 # end def(AlGaAs)

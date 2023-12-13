@@ -57,8 +57,7 @@ def find_nearest(a, a0):
 def arg_find_nearest(a, a0):
     """Return index to element in ndArray `a` that has value closest
     to the scalar value `a0`."""
-    idx = numpy.abs(a - a0).argmin()
-    return idx
+    return numpy.abs(a - a0).argmin()
 
 
 def count_noninf(multilayer):
@@ -72,11 +71,7 @@ def count_noninf(multilayer):
 
 def arg_inf(multilayer):
     """Return index to layers with infinite-thickness in an EMpy Multilayer object."""
-    out = []
-    for ix, x in enumerate(multilayer):
-        if numpy.isinf(x.thickness):
-            out.append(ix)
-    return out
+    return [ix for ix, x in enumerate(multilayer) if numpy.isinf(x.thickness)]
 
 
 # Define some materials
@@ -172,7 +167,7 @@ wlidx = arg_find_nearest(wls, wl_lasermon)
 idxtemp = 0
 
 print("Etching...")
-while go is True:
+while go:
     # keep reducing thickness/removing layers until last layer is too thin
     i = i + 1
 
@@ -186,27 +181,24 @@ while go is True:
         if i <= 0:
             # first iteration: analyze unetched structure
             EtchStep_current = 0.0
-            indexno = idxtemp
         else:
             # point to non-infinite layers for etching:
             while numpy.isinf(layers[idxtemp].thickness):
-                idxtemp = idxtemp + 1  # assumes etching from 1st layer in list
-            indexno = idxtemp
-
+                idxtemp += 1
+        indexno = idxtemp
         if layers[indexno].thickness <= EtchStep_current:
             # next layer is thinner than etch step
             # Reduce etch step + remove this layer:
             EtchStep_current = EtchStep_current - layers[indexno].thickness
             layers.pop(indexno)
 
-        elif layers[indexno].thickness > EtchStep_current:
+        else:
             # etch increment ends within next layer
             # reduce layer thickness & solve & save data points:
             layers[indexno].thickness = layers[indexno].thickness - EtchStep_current
             # add this layer stack to the list
             etchedlayers.append(deepcopy(layers))
-            # get RefrIndex in this layer
-            RefrIdx.append(etchedlayers[-1][idxtemp].mat.n(wl_lasermon).real)
+            RefrIdx.append(etchedlayers[-1][indexno].mat.n(wl_lasermon).real)
             if i <= 0:
                 # for 1st iteration: unetched layer
                 EtchSteps.append(0.0)

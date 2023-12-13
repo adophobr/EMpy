@@ -125,9 +125,8 @@ class Input(object):
         """Save the input data to the input file."""
         if filename is None:
             filename = self.filename
-        f = open(filename, "w")
-        f.write(self.__str__())
-        f.close()
+        with open(filename, "w") as f:
+            f.write(self.__str__())
 
 
 class Param(object):
@@ -236,12 +235,8 @@ class TimeSensor(object):
         self.__plot_field(self.Hz, logplot)
 
     def __plot_field(self, field, logplot=False):
-        if logplot:
-            data = 20 * numpy.log10(1e-20 + numpy.abs(field))
-            pylab.plot(self.t, data)
-        else:
-            data = field
-            pylab.plot(self.t, data)
+        data = 20 * numpy.log10(1e-20 + numpy.abs(field)) if logplot else field
+        pylab.plot(self.t, data)
         pylab.show()
 
 
@@ -266,27 +261,21 @@ class FDTD(object):
         remote_dir = fixdir(remote_dir_)
         directory = fixdir(directory_)
         # input file
-        os.system(
-            "scp -C bollalo001@pico:" + remote_dir + "/" + input_file + " " + directory
-        )
+        os.system(f"scp -C bollalo001@pico:{remote_dir}/{input_file} {directory}")
         # param file
-        os.system(
-            "scp -C bollalo001@pico:" + remote_dir + "/" + param_file + " " + directory
-        )
+        os.system(f"scp -C bollalo001@pico:{remote_dir}/{param_file} {directory}")
         # fieldslices, flux and time sensors
-        os.system(
-            "scp -C bollalo001@pico:" + remote_dir + "/[EHeh]*_*" + " " + directory
-        )
+        os.system(f"scp -C bollalo001@pico:{remote_dir}/[EHeh]*_* {directory}")
         # dielslices
-        os.system("scp -C bollalo001@pico:" + remote_dir + "/diel*" + " " + directory)
+        os.system(f"scp -C bollalo001@pico:{remote_dir}/diel* {directory}")
 
     def put_data(self, remote_dir_="./", input_file="inp.txt", directory_="./"):
         remote_dir = fixdir(remote_dir_)
         directory = fixdir(directory_)
         # input file
-        os.system("scp -C" + directory + input_file + " bollalo001@pico:" + remote_dir)
+        os.system(f"scp -C{directory}{input_file} bollalo001@pico:{remote_dir}")
         # .dat modesolver's files
-        os.system("scp -C" + directory + "*.dat bollalo001@pico:" + remote_dir)
+        os.system(f"scp -C{directory}*.dat bollalo001@pico:{remote_dir}")
 
     def load(
         self, directory_="./", input_file="inp.txt", param_file="param", remote_dir_=""
@@ -336,69 +325,64 @@ class FDTD(object):
         # dielslices
         ndielslices = numpy.fromstring(strip_comment(f.readline()), sep=" ")
         inp.dielslices = []
-        for i in range(ndielslices):
-            inp.dielslices.append(
-                numpy.fromstring(strip_comment(f.readline()), sep=" ")
-            )
-
+        inp.dielslices.extend(
+            numpy.fromstring(strip_comment(f.readline()), sep=" ")
+            for _ in range(ndielslices)
+        )
         # fieldslices
         nfieldslices = numpy.fromstring(strip_comment(f.readline()), sep=" ")
         inp.fieldslices = []
-        for i in range(nfieldslices):
-            inp.fieldslices.append(
-                numpy.fromstring(strip_comment(f.readline()), sep=" ")
-            )
-
+        inp.fieldslices.extend(
+            numpy.fromstring(strip_comment(f.readline()), sep=" ")
+            for _ in range(nfieldslices)
+        )
         # dielobjs
         (ndielobjs, inp.bgrix, inp.bgsigma) = numpy.fromstring(
             strip_comment(f.readline()), sep=" "
         )
         inp.dielobjs = []
-        for i in range(int(ndielobjs)):
-            inp.dielobjs.append(
-                (strip_comment(f.readline()), strip_comment(f.readline()))
-            )
+        inp.dielobjs.extend(
+            (strip_comment(f.readline()), strip_comment(f.readline()))
+            for _ in range(int(ndielobjs))
+        )
         inp.smoothing_method = numpy.fromstring(strip_comment(f.readline()), sep=" ")
 
         # sources
         nsources = numpy.fromstring(strip_comment(f.readline()), dtype=int, sep=" ")
         inp.sources = []
         #        (inp.time_dependence, inp.wls, inp.pwidth, inp.shift) = numpy.fromstring(strip_comment(f.readline()), sep = ' ')
-        for i in range(nsources):
-            inp.sources.append(
-                (
-                    strip_comment(f.readline()),
-                    strip_comment(f.readline()),
-                    strip_comment(f.readline()),
-                    strip_comment(f.readline()),
-                )
+        inp.sources.extend(
+            (
+                strip_comment(f.readline()),
+                strip_comment(f.readline()),
+                strip_comment(f.readline()),
+                strip_comment(f.readline()),
             )
-
+            for _ in range(nsources)
+        )
         # dft monitors
         (inp.lambdamin, inp.lambdamax, inp.dlambda) = numpy.fromstring(
             strip_comment(f.readline()), sep=" "
         )
         ndftmonitors = numpy.fromstring(strip_comment(f.readline()), dtype=int, sep=" ")
         inp.dftmonitors = []
-        for i in range(ndftmonitors):
-            inp.dftmonitors.append(
-                (
-                    numpy.fromstring(strip_comment(f.readline()), sep=" "),
-                    numpy.fromstring(strip_comment(f.readline()), sep=" "),
-                )
+        inp.dftmonitors.extend(
+            (
+                numpy.fromstring(strip_comment(f.readline()), sep=" "),
+                numpy.fromstring(strip_comment(f.readline()), sep=" "),
             )
-
+            for _ in range(ndftmonitors)
+        )
         # time monitors
         ntimemonitors = numpy.fromstring(strip_comment(f.readline()), sep=" ")
         inp.timemonitors_time_interval = numpy.fromstring(
             strip_comment(f.readline()), sep=" "
         )
         inp.timemonitors = []
-        for i in range(ntimemonitors):
-            inp.timemonitors.append(
-                numpy.fromstring(strip_comment(f.readline()), sep=" ")
-            )
-
+        inp.timemonitors.extend(
+            numpy.fromstring(strip_comment(f.readline()), sep=" ")
+            for _ in range(ntimemonitors)
+        )
         f.close()
         self.input = inp
 
@@ -411,7 +395,7 @@ class FDTD(object):
         except Exception:
             print("ERROR: param file")
             return
-        param.dx, param.dy, param.dz, param.dt = data[0:4]
+        param.dx, param.dy, param.dz, param.dt = data[:4]
         (
             param.mx,
             param.my,
@@ -467,10 +451,10 @@ class FDTD(object):
             tmp.H2 = load_fortran_unformatted(directory + "H2_%02d" % (iflux + 1))
             # [tmp.E1, tmp.H1, tmp.E2, tmp.H2] = map(lambda x: x[0::2] + 1j * x[1::2], [tmp.E1, tmp.H1, tmp.E2, tmp.H2])
             # more memory efficient!
-            tmp.E1 = tmp.E1[0::2] + 1j * tmp.E1[1::2]
-            tmp.H1 = tmp.H1[0::2] + 1j * tmp.H1[1::2]
-            tmp.E2 = tmp.E2[0::2] + 1j * tmp.E2[1::2]
-            tmp.H2 = tmp.H2[0::2] + 1j * tmp.H2[1::2]
+            tmp.E1 = tmp.E1[::2] + 1j * tmp.E1[1::2]
+            tmp.H1 = tmp.H1[::2] + 1j * tmp.H1[1::2]
+            tmp.E2 = tmp.E2[::2] + 1j * tmp.E2[1::2]
+            tmp.H2 = tmp.H2[::2] + 1j * tmp.H2[1::2]
 
             n1 = dm["flxlim"][1] - dm["flxlim"][0] + 1
             n2 = dm["flxlim"][3] - dm["flxlim"][2] + 1
@@ -549,8 +533,8 @@ class FDTD(object):
         pylab.contour(x1, x2, data, 64)
         pylab.colorbar()
         pylab.axis("image")
-        pylab.xlabel(x1label + " /um")
-        pylab.ylabel(x2label + " /um")
+        pylab.xlabel(f"{x1label} /um")
+        pylab.ylabel(f"{x2label} /um")
         pylab.show()
 
     def memory(self):
@@ -646,7 +630,7 @@ class FDTD(object):
         if bg:
             cmd += "&"
         if remote:
-            cmd = 'ssh pico "' + cmd + '"'
+            cmd = f'ssh pico "{cmd}"'
         os.system(cmd)
 
     def __str__(self):
@@ -675,9 +659,7 @@ def load_fortran_unformatted(filename):
 def strip_comment(line):
     """Get rid of fortran comments."""
     idx = line.find("!")
-    if idx != -1:
-        return line[:idx].strip()
-    return line
+    return line[:idx].strip() if idx != -1 else line
 
 
 def fixdir(str, sep="/"):
