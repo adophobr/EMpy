@@ -136,12 +136,7 @@ class Boundary(object):
             raise ValueError("Unknown boundary.")
 
     def __str__(self):
-        return "xleft = %s, xright = %s, yleft = %s, yright = %s" % (
-            self.xleft,
-            self.xright,
-            self.yleft,
-            self.yright,
-        )
+        return f"xleft = {self.xleft}, xright = {self.xright}, yleft = {self.yleft}, yright = {self.yright}"
 
 
 class Slice(object):
@@ -289,15 +284,8 @@ class FMMMode2d(Mode):
     def eval(self, x_=None, y_=None):
         """Evaluate the mode at x,y."""
 
-        if x_ is None:
-            x = self.get_x()
-        else:
-            x = numpy.atleast_1d(x_)
-        if y_ is None:
-            y = self.get_y()
-        else:
-            y = numpy.atleast_1d(y_)
-
+        x = self.get_x() if x_ is None else numpy.atleast_1d(x_)
+        y = self.get_y() if y_ is None else numpy.atleast_1d(y_)
         nmodi = len(self.modie)
         lenx = len(x)
         leny = len(y)
@@ -501,20 +489,12 @@ class FMMMode2d(Mode):
 
     def intensity(self, x=None, y=None):
         Ex, Ey, Ez, cBx, cBy, cBz = self.fields(x, y)
-        cSz = 0.5 * (Ex * numpy.conj(cBy) - Ey * numpy.conj(cBx))
-        return cSz
+        return 0.5 * (Ex * numpy.conj(cBy) - Ey * numpy.conj(cBx))
 
     def TEfrac_old(self, x_=None, y_=None):
 
-        if x_ is None:
-            x = self.get_x()
-        else:
-            x = numpy.atleast_1d(x_)
-        if y_ is None:
-            y = self.get_y()
-        else:
-            y = numpy.atleast_1d(y_)
-
+        x = self.get_x() if x_ is None else numpy.atleast_1d(x_)
+        y = self.get_y() if y_ is None else numpy.atleast_1d(y_)
         Ex, Ey, Ez, cBx, cBy, cBz, cSz = self.fields(x, y)
         cSTE = 0.5 * EMpy.utils.trapz2(Ex * numpy.conj(cBy), y, x)
         cSTM = 0.5 * EMpy.utils.trapz2(-Ey * numpy.conj(cBx), y, x)
@@ -527,15 +507,8 @@ class FMMMode2d(Mode):
 
     def overlap_old(self, m, x_=None, y_=None):
 
-        if x_ is None:
-            x = self.get_x()
-        else:
-            x = numpy.atleast_1d(x_)
-        if y_ is None:
-            y = self.get_y()
-        else:
-            y = numpy.atleast_1d(y_)
-
+        x = self.get_x() if x_ is None else numpy.atleast_1d(x_)
+        y = self.get_y() if y_ is None else numpy.atleast_1d(y_)
         Ex, Ey, Ez, cBx, cBy, cBz = self.fields(x, y)
         cSz = self.intensity(x, y)
         norm = scipy.sqrt(EMpy.utils.trapz2(cSz, y, x))

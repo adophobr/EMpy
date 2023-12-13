@@ -157,10 +157,7 @@ class ThermalOpticCoefficient(object):
         self.T0 = T0
 
     def TOC(self, T):
-        if self.__data is not None:
-            return numpy.polyval(self.__data, T)
-        else:
-            return 0.0
+        return numpy.polyval(self.__data, T) if self.__data is not None else 0.0
 
     def __call__(self, T):
         return self.TOC(T)
@@ -213,7 +210,7 @@ class IsotropicMaterial(Material):
 
     def __str__(self):
         """Return material name."""
-        return self.name + ", isotropic"
+        return f"{self.name}, isotropic"
 
 
 class EpsilonTensor(object):
@@ -255,7 +252,7 @@ class AnisotropicMaterial(Material):
 
     def __str__(self):
         """Return material name."""
-        return self.name + ", anisotropic"
+        return f"{self.name}, anisotropic"
 
 
 # Vacuum
@@ -361,7 +358,7 @@ def get_10400_000_100(conc000):
     nE_ = numpy.interp(conc000, conc, epsE) ** 0.5
 
     return LiquidCrystal(
-        "10400_000_100_" + str(conc000) + "_" + str(100 - conc000),
+        f"10400_000_100_{str(conc000)}_{str(100 - conc000)}",
         nO_,
         nE_,
         nO_electrical_,

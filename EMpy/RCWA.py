@@ -162,13 +162,13 @@ class RCWA(object):
         if idx.size == 0:
             # warning('no BinaryGratings: better use a simple transfer matrix.')
             return 1.0  # return LAMBDA: any value will do
+        # check that all the pitches are the same!
+        l = S.asarray([self.multilayer[i].pitch for i in idx])
+        if S.all(l == l[0]):
+            return l[0]
+
         else:
-            # check that all the pitches are the same!
-            l = S.asarray([self.multilayer[i].pitch for i in idx])
-            if not S.all(l == l[0]):
-                raise ValueError("All the BinaryGratings must have the same pitch.")
-            else:
-                return l[0]
+            raise ValueError("All the BinaryGratings must have the same pitch.")
 
 
 class IsotropicRCWA(RCWA):
